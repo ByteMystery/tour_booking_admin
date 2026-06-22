@@ -4,6 +4,9 @@ import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { Toaster } from "react-hot-toast";
 
+// Tắt static prerendering toàn bộ app — Firebase cần browser environment
+export const dynamic = "force-dynamic";
+
 const inter = Inter({ subsets: ["latin", "vietnamese"] });
 
 export const metadata: Metadata = {
