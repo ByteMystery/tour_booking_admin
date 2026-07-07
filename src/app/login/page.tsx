@@ -33,8 +33,8 @@ export default function LoginPage() {
   const { login } = useAuth();
   const router = useRouter();
 
-  const [username, setUsername] = useState("admin");
-  const [password, setPassword] = useState("123456");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -242,26 +242,7 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          {/* Credentials hint */}
-          <div className="rounded-xl border border-dashed border-indigo-200 bg-indigo-50/60 p-4">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-indigo-700">
-              Tài khoản quản trị
-            </p>
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <div className="rounded-lg bg-white/80 px-3 py-2 shadow-sm">
-                <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
-                  Tên đăng nhập
-                </p>
-                <p className="font-mono font-bold text-slate-700">admin</p>
-              </div>
-              <div className="rounded-lg bg-white/80 px-3 py-2 shadow-sm">
-                <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
-                  Mật khẩu
-                </p>
-                <p className="font-mono font-bold text-slate-700">123456</p>
-              </div>
-            </div>
-          </div>
+
         </div>
       </div>
     </div>
