@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useBookings, updateDocById } from "@/hooks/useFirestore";
-import { formatCurrency, formatDate, getStatusLabel } from "@/lib/utils";
+import { formatCurrency, formatDate, formatDateTime, getStatusLabel } from "@/lib/utils";
 import type { Booking, BookingStatus } from "@/types";
 import { Eye, Download, Filter } from "lucide-react";
 import Image from "next/image";
@@ -144,9 +144,12 @@ export default function BookingsPage() {
               key: "bookingCode",
               label: "Mã đơn",
               render: (_, row) => (
-                <span className="font-mono text-xs font-semibold text-indigo-600 bg-indigo-50 px-2 py-1 rounded">
+                <button
+                  onClick={() => setSelected(row)}
+                  className="font-mono text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 hover:text-indigo-800 px-2 py-1 rounded transition-colors text-left cursor-pointer"
+                >
                   {row.bookingCode}
-                </span>
+                </button>
               ),
             },
             {
@@ -267,77 +270,233 @@ export default function BookingsPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 rounded-xl bg-muted/50 p-4 text-sm">
-                <div>
-                  <p className="text-xs text-muted-foreground mb-0.5">Loại dịch vụ</p>
-                  <p className="font-medium">{getStatusLabel(selected.bookingType)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-0.5">Ngày đặt</p>
-                  <p className="font-medium">{formatDate(selected.createdAt)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-0.5">Ngày đi</p>
-                  <p className="font-medium">{formatDate(selected.departureDate)}</p>
-                </div>
-                {selected.returnDate && (
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-0.5">Ngày về</p>
-                    <p className="font-medium">{formatDate(selected.returnDate)}</p>
-                  </div>
-                )}
-                <div>
-                  <p className="text-xs text-muted-foreground mb-0.5">Số khách</p>
-                  <p className="font-medium">
-                    {selected.adults} người lớn{selected.children ? ` + ${selected.children} trẻ em` : ""}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-0.5">Tổng thanh toán</p>
-                  <p className="font-bold text-lg text-indigo-600">{formatCurrency(selected.totalPrice)}</p>
-                </div>
-                {selected.departureCity && (
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-0.5">Điểm đi</p>
-                    <p className="font-medium">{selected.departureCity}</p>
-                  </div>
-                )}
-                {selected.accommodation && (
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-0.5">Loại phòng/vé</p>
-                    <p className="font-medium">{selected.accommodation}</p>
-                  </div>
-                )}
-                {/* Flight extras */}
-                {selected.bookingType === "flight" && (
-                  <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-muted/30 p-5 rounded-2xl border text-sm">
+                
+                {/* Cột 1: Thông tin đơn hàng & Khách hàng */}
+                <div className="space-y-4">
+                  <h4 className="font-bold text-xs text-indigo-600 uppercase tracking-wider border-b pb-1">
+                    Thông tin đơn hàng
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <p className="text-xs text-muted-foreground mb-0.5">Hãng bay</p>
-                      <p className="font-medium">{selected.airlineName}</p>
+                      <p className="text-xs text-muted-foreground">ID Hệ thống</p>
+                      <p className="font-mono text-xs font-medium break-all select-all">{selected.id}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground mb-0.5">Số hiệu</p>
-                      <p className="font-medium">{selected.flightNumber}</p>
-                    </div>
-                  </>
-                )}
-                {/* Transfer extras */}
-                {selected.bookingType === "transfer" && (
-                  <>
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-0.5">Loại xe</p>
-                      <p className="font-medium">{selected.vehicleType}</p>
+                      <p className="text-xs text-muted-foreground">Mã đơn đặt</p>
+                      <p className="font-mono text-xs font-bold text-indigo-600">{selected.bookingCode}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground mb-0.5">Giờ đón</p>
-                      <p className="font-medium">{selected.pickUpTime}</p>
+                      <p className="text-xs text-muted-foreground">Mã khách hàng</p>
+                      <p className="font-mono text-xs font-medium break-all select-all">{selected.userId}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Trạng thái đơn</p>
+                      <div className="mt-0.5"><StatusBadge status={selected.status} /></div>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Ngày đặt đơn</p>
+                      <p className="font-medium">{formatDateTime(selected.createdAt)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Cập nhật lúc</p>
+                      <p className="font-medium">{formatDateTime(selected.updatedAt)}</p>
+                    </div>
+                    {selected.paymentDeadline && (
+                      <div className="col-span-2">
+                        <p className="text-xs text-muted-foreground">Hạn thanh toán</p>
+                        <p className="font-medium text-amber-600">{formatDateTime(selected.paymentDeadline)}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Cột 2: Thông tin dịch vụ & Địa điểm */}
+                <div className="space-y-4">
+                  <h4 className="font-bold text-xs text-indigo-600 uppercase tracking-wider border-b pb-1">
+                    Thông tin dịch vụ
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Loại dịch vụ</p>
+                      <p className="font-medium capitalize bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded inline-block text-xs mt-0.5">
+                        {getStatusLabel(selected.bookingType)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Mã dịch vụ (ID)</p>
+                      <p className="font-mono text-xs font-medium break-all select-all">{selected.tourId}</p>
                     </div>
                     <div className="col-span-2">
-                      <p className="text-xs text-muted-foreground mb-0.5">Điểm đón → Điểm trả</p>
-                      <p className="font-medium">{selected.pickUpLocation} → {selected.dropOffLocation}</p>
+                      <p className="text-xs text-muted-foreground">Tên dịch vụ</p>
+                      <p className="font-medium">{selected.tourName}</p>
                     </div>
-                  </>
-                )}
+                    {selected.departureCity && (
+                      <div>
+                        <p className="text-xs text-muted-foreground">Điểm khởi hành</p>
+                        <p className="font-medium">{selected.departureCity}</p>
+                      </div>
+                    )}
+                    {selected.destination && (
+                      <div>
+                        <p className="text-xs text-muted-foreground">Điểm đến</p>
+                        <p className="font-medium">{selected.destination}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Lịch trình & Số lượng khách & Thông tin bổ sung */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-muted/30 p-5 rounded-2xl border text-sm">
+                
+                {/* Lịch trình & Số lượng khách */}
+                <div className="space-y-4">
+                  <h4 className="font-bold text-xs text-indigo-600 uppercase tracking-wider border-b pb-1">
+                    Thời gian & Hành khách
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Ngày đi / Bắt đầu</p>
+                      <p className="font-medium">{formatDate(selected.departureDate)}</p>
+                    </div>
+                    {selected.returnDate && (
+                      <div>
+                        <p className="text-xs text-muted-foreground">Ngày về / Kết thúc</p>
+                        <p className="font-medium">{formatDate(selected.returnDate)}</p>
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-xs text-muted-foreground">Người lớn</p>
+                      <p className="font-medium">{selected.adults} người</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Trẻ em</p>
+                      <p className="font-medium">{selected.children || 0} trẻ em</p>
+                    </div>
+                    {selected.guestsCount && (
+                      <div>
+                        <p className="text-xs text-muted-foreground">Tổng số khách</p>
+                        <p className="font-medium">{selected.guestsCount} người</p>
+                      </div>
+                    )}
+                    {selected.accommodation && (
+                      <div className="col-span-2">
+                        <p className="text-xs text-muted-foreground">Lưu trú / Chỗ ở</p>
+                        <p className="font-medium">{selected.accommodation}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Thuộc tính bổ sung theo Loại dịch vụ */}
+                <div className="space-y-4">
+                  <h4 className="font-bold text-xs text-indigo-600 uppercase tracking-wider border-b pb-1">
+                    Chi tiết bổ sung ({getStatusLabel(selected.bookingType)})
+                  </h4>
+                  
+                  {selected.bookingType === "tour" && (
+                    <div className="text-xs text-muted-foreground italic pt-2">
+                      Dịch vụ Tour không có thuộc tính bổ sung đặc thù.
+                    </div>
+                  )}
+
+                  {selected.bookingType === "hotel" && (
+                    <div className="grid grid-cols-2 gap-3">
+                      {selected.checkInDate && (
+                        <div>
+                          <p className="text-xs text-muted-foreground">Ngày nhận phòng</p>
+                          <p className="font-medium">{formatDateTime(selected.checkInDate)}</p>
+                        </div>
+                      )}
+                      {selected.checkOutDate && (
+                        <div>
+                          <p className="text-xs text-muted-foreground">Ngày trả phòng</p>
+                          <p className="font-medium">{formatDateTime(selected.checkOutDate)}</p>
+                        </div>
+                      )}
+                      {selected.roomType && (
+                        <div>
+                          <p className="text-xs text-muted-foreground">Loại phòng</p>
+                          <p className="font-medium">{selected.roomType}</p>
+                        </div>
+                      )}
+                      {selected.guestsCount && (
+                        <div>
+                          <p className="text-xs text-muted-foreground">Số lượng khách</p>
+                          <p className="font-medium">{selected.guestsCount} khách</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {selected.bookingType === "flight" && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Hãng bay</p>
+                        <p className="font-medium flex items-center gap-1.5 mt-0.5">
+                          {selected.airlineLogo && (
+                            <img src={selected.airlineLogo} alt={selected.airlineName} className="h-4 w-4 object-contain shrink-0" />
+                          )}
+                          <span>{selected.airlineName || "—"}</span>
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Số hiệu chuyến bay</p>
+                        <p className="font-medium font-mono">{selected.flightNumber || "—"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Hạng vé</p>
+                        <p className="font-medium">{selected.flightClass || "—"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Tên hành khách</p>
+                        <p className="font-medium">{selected.passengerName || "—"}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {selected.bookingType === "transfer" && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Loại xe</p>
+                        <p className="font-medium">{selected.vehicleType || "—"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Giờ đón</p>
+                        <p className="font-medium">{selected.pickUpTime || "—"}</p>
+                      </div>
+                      {selected.flightCode && (
+                        <div>
+                          <p className="text-xs text-muted-foreground">Mã chuyến bay</p>
+                          <p className="font-medium font-mono">{selected.flightCode}</p>
+                        </div>
+                      )}
+                      <div className="col-span-2">
+                        <p className="text-xs text-muted-foreground">Điểm đón</p>
+                        <p className="font-medium">{selected.pickUpLocation || "—"}</p>
+                      </div>
+                      <div className="col-span-2">
+                        <p className="text-xs text-muted-foreground">Điểm trả</p>
+                        <p className="font-medium">{selected.dropOffLocation || "—"}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+              </div>
+
+              {/* Chi tiết thanh toán */}
+              <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-2xl flex items-center justify-between">
+                <div>
+                  <h5 className="font-bold text-sm text-indigo-900">Chi tiết thanh toán</h5>
+                  <p className="text-xs text-indigo-700 mt-0.5">Đã bao gồm VAT và phí dịch vụ</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-muted-foreground">Tổng tiền thanh toán</p>
+                  <p className="font-extrabold text-2xl text-indigo-600">{formatCurrency(selected.totalPrice)}</p>
+                </div>
               </div>
 
               <div className="flex gap-3 pt-2">
