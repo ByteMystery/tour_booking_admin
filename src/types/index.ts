@@ -122,6 +122,8 @@ export interface Tour {
   updatedAt?: Timestamp;
 }
 
+export type LastMinuteTour = Tour;
+
 // ─────────────────────────────────────────────
 // BOOKINGS
 // ─────────────────────────────────────────────

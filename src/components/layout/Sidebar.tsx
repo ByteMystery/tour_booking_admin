@@ -40,6 +40,7 @@ const navItems = [
     group: "Quản lý dịch vụ",
     items: [
       { href: "/dashboard/tours", label: "Tours", icon: Map },
+      { href: "/dashboard/last-minute-tours", label: "Tour giờ chót", icon: Sparkles },
       { href: "/dashboard/hotels", label: "Khách sạn", icon: Building2 },
       { href: "/dashboard/flights", label: "Vé máy bay", icon: Plane },
       { href: "/dashboard/transfers", label: "Xe đưa đón", icon: Car },
