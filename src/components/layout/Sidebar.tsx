@@ -23,6 +23,7 @@ import {
   Compass,
   LogOut,
   Sparkles,
+  Gift,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -41,6 +42,7 @@ const navItems = [
     items: [
       { href: "/dashboard/tours", label: "Tours", icon: Map },
       { href: "/dashboard/last-minute-tours", label: "Tour giờ chót", icon: Sparkles },
+      { href: "/dashboard/zero-dong-tours", label: "Tour 0đ", icon: Gift },
       { href: "/dashboard/hotels", label: "Khách sạn", icon: Building2 },
       { href: "/dashboard/flights", label: "Vé máy bay", icon: Plane },
       { href: "/dashboard/transfers", label: "Xe đưa đón", icon: Car },

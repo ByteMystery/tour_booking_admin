@@ -123,6 +123,7 @@ export interface Tour {
 }
 
 export type LastMinuteTour = Tour;
+export type ZeroDongTour = Tour;
 
 // ─────────────────────────────────────────────
 // BOOKINGS
