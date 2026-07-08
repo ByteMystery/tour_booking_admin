@@ -16,8 +16,6 @@ import {
   ChevronDown,
   ArrowRight,
   MoreVertical,
-  Globe,
-  TrendingUp,
 } from "lucide-react";
 import {
   AreaChart,
@@ -35,7 +33,6 @@ import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useBookingsRealtime } from "@/hooks/useFirestore";
 import { formatCurrency, formatNumber } from "@/lib/utils";
 import Link from "next/link";
-import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 
 const TOUR_PLACEHOLDER =
@@ -58,51 +55,85 @@ export default function DashboardPage() {
     return formatCurrency(value);
   };
 
-  // Blended statistics (real Firestore + mockup fallbacks)
+  // Real statistics from Firebase Firestore
   const displayStats = {
-    totalTours: stats?.totalTours ? formatNumber(stats.totalTours) : "1.248",
-    totalBookings: stats?.totalBookings ? formatNumber(stats.totalBookings) : "3.682",
-    totalUsers: stats?.totalUsers ? formatNumber(stats.totalUsers) : "2.451",
-    totalRevenue: stats?.totalRevenue && stats.totalRevenue > 0
-      ? formatStatsRevenue(stats.totalRevenue)
-      : "2,45 tỷ đ",
-    tourGrowth: 12.5,
-    bookingGrowth: stats?.bookingGrowth !== undefined && stats.bookingGrowth !== 0 ? stats.bookingGrowth : 18.7,
-    userGrowth: 9.3,
-    revenueGrowth: stats?.revenueGrowth !== undefined && stats.revenueGrowth !== 0 ? stats.revenueGrowth : 23.1,
+    totalTours: stats?.totalTours ? formatNumber(stats.totalTours) : "0",
+    totalBookings: stats?.totalBookings ? formatNumber(stats.totalBookings) : "0",
+    totalUsers: stats?.totalUsers ? formatNumber(stats.totalUsers) : "0",
+    totalRevenue: formatStatsRevenue(stats?.totalRevenue ?? 0),
+    bookingGrowth: stats?.bookingGrowth || 0,
+    revenueGrowth: stats?.revenueGrowth || 0,
   };
 
-  // mockup 7-day revenue chart
-  const mockupDailyRevenue = [
-    { name: "01/06", revenue: 700000000 },
-    { name: "02/06", revenue: 1400000000 },
-    { name: "03/06", revenue: 1000000000 },
-    { name: "04/06", revenue: 1500000000 },
-    { name: "05/06", revenue: 1200000000 },
-    { name: "06/06", revenue: 2200000000 },
-    { name: "07/06", revenue: 1900000000 },
-  ];
+  // Real daily revenue calculation for the last 7 days from recentBookings
+  const dailyRevenueData = React.useMemo(() => {
+    const days = [];
+    const now = new Date();
+    // Get last 7 days starting from 6 days ago to today
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(now.getDate() - i);
+      days.push(d);
+    }
 
-  // Dynamic pie chart for revenue channel
-  const rawRevenueNum = stats?.totalRevenue || 2450000000;
-  const channelData = [
-    { name: "Website", value: 40.2, color: "#2563EB", actualValue: rawRevenueNum * 0.402 },
-    { name: "Đại lý", value: 28.7, color: "#0D9488", actualValue: rawRevenueNum * 0.287 },
-    { name: "Ứng dụng", value: 18.9, color: "#06B6D4", actualValue: rawRevenueNum * 0.189 },
-    { name: "Mạng xã hội", value: 8.6, color: "#F59E0B", actualValue: rawRevenueNum * 0.086 },
-    { name: "Khác", value: 3.6, color: "#6B7280", actualValue: rawRevenueNum * 0.036 },
-  ];
+    return days.map((date) => {
+      const dateStr = date.getDate().toString().padStart(2, "0") + "/" + (date.getMonth() + 1).toString().padStart(2, "0");
+      
+      const dayBookings = recentBookings.filter((b) => {
+        if (!b.createdAt) return false;
+        const bDate = b.createdAt.toDate();
+        return (
+          bDate.getDate() === date.getDate() &&
+          bDate.getMonth() === date.getMonth() &&
+          bDate.getFullYear() === date.getFullYear()
+        );
+      });
 
-  // Blended recent bookings list
+      const revenue = dayBookings.reduce((sum, b) => sum + (b.totalPrice ?? 0), 0);
+      return {
+        name: dateStr,
+        revenue: revenue,
+      };
+    });
+  }, [recentBookings]);
+
+  // Real revenue distribution by service type (Tour, Hotel, Flight, Transfer) from recentBookings
+  const serviceTypeData = React.useMemo(() => {
+    const typeTotals: Record<string, { label: string; color: string; value: number }> = {
+      tour: { label: "Tour", color: "#2563EB", value: 0 },
+      hotel: { label: "Khách sạn", color: "#0D9488", value: 0 },
+      flight: { label: "Vé máy bay", color: "#06B6D4", value: 0 },
+      transfer: { label: "Xe đưa đón", color: "#F59E0B", value: 0 },
+    };
+
+    let totalRevenue = 0;
+    recentBookings.forEach((b) => {
+      const type = b.bookingType || "tour";
+      const price = b.totalPrice || 0;
+      if (type in typeTotals) {
+        typeTotals[type].value += price;
+        totalRevenue += price;
+      }
+    });
+
+    const data = Object.entries(typeTotals).map(([_, item]) => {
+      const pct = totalRevenue > 0 ? parseFloat(((item.value / totalRevenue) * 100).toFixed(1)) : 0;
+      return {
+        name: item.label,
+        value: pct,
+        amount: item.value,
+        color: item.color,
+      };
+    });
+
+    return {
+      data,
+      total: totalRevenue,
+    };
+  }, [recentBookings]);
+
+  // Real recent bookings list mapped directly from Firestore
   const displayBookings = React.useMemo(() => {
-    const mockBookings = [
-      { id: "DH6821", customerName: "Mai Anh", tourName: "Tour Đà Nẵng - Hội An 3N2Đ", totalPrice: 4950000, status: "confirmed" as any },
-      { id: "DH6820", customerName: "Hoàng Nam", tourName: "Tour Phú Quốc 4N3Đ", totalPrice: 7990000, status: "pending" as any },
-      { id: "DH6819", customerName: "Thu Hà", tourName: "Tour Sapa - Fansipan 2N1Đ", totalPrice: 3250000, status: "confirmed" as any },
-      { id: "DH6818", customerName: "Minh Quân", tourName: "Tour Nha Trang 3N2Đ", totalPrice: 5690000, status: "cancelled" as any },
-      { id: "DH6817", customerName: "Thanh Huyền", tourName: "Tour Đà Lạt 3N2Đ", totalPrice: 4290000, status: "confirmed" as any },
-    ];
-
     const customerNames = ["Mai Anh", "Hoàng Nam", "Thu Hà", "Minh Quân", "Thanh Huyền", "Tuấn Anh", "Phương Thảo", "Quốc Bảo", "Bích Ngọc", "Duy Hưng"];
     const getNameFromUserId = (userId: string) => {
       if (!userId) return "Khách hàng";
@@ -114,31 +145,16 @@ export default function DashboardPage() {
       return customerNames[index];
     };
 
-    if (!recentBookings || recentBookings.length === 0) {
-      return mockBookings;
-    }
-
-    const mapped = recentBookings.slice(0, 5).map((b) => ({
+    return recentBookings.slice(0, 5).map((b) => ({
       id: b.bookingCode || b.id.substring(0, 6).toUpperCase(),
       customerName: getNameFromUserId(b.userId),
       tourName: b.tourName || "Combo du lịch",
       totalPrice: b.totalPrice || 0,
       status: b.status,
     }));
-
-    if (mapped.length < 5) {
-      const result = [...mapped];
-      for (let i = 0; i < 5 - mapped.length; i++) {
-        const item = mockBookings[i % mockBookings.length];
-        result.push(item);
-      }
-      return result;
-    }
-
-    return mapped;
   }, [recentBookings]);
 
-  // Aggregate top selling tours
+  // Real top selling tours aggregated from Firestore bookings
   const topToursList = React.useMemo(() => {
     const tourCounts: Record<string, { name: string; count: number; image?: string }> = {};
     recentBookings.forEach((b) => {
@@ -154,40 +170,9 @@ export default function DashboardPage() {
       }
     });
 
-    const sorted = Object.values(tourCounts).sort((a, b) => b.count - a.count);
-
-    const mockTours = [
-      { name: "Tour Phú Quốc 4N3Đ", count: 532, image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400" },
-      { name: "Tour Đà Nẵng - Hội An 3N2Đ", count: 421, image: "https://images.unsplash.com/photo-1528127269322-539801943592?w=400" },
-      { name: "Tour Nha Trang 3N2Đ", count: 318, image: "https://images.unsplash.com/photo-1540206395-68808572332f?w=400" },
-      { name: "Tour Sapa - Fansipan 2N1Đ", count: 265, image: "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=400" },
-      { name: "Tour Đà Lạt 3N2Đ", count: 198, image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400" },
-    ];
-
-    if (sorted.length === 0) {
-      return mockTours;
-    }
-
-    if (sorted.length < 5) {
-      const result = sorted.map(t => ({
-        name: t.name,
-        count: t.count * 12 + 45, // Scale counts for realistic aesthetic
-        image: t.image
-      }));
-      for (let i = 0; i < 5 - sorted.length; i++) {
-        const item = mockTours[i % mockTours.length];
-        if (!result.find(r => r.name === item.name)) {
-          result.push(item);
-        }
-      }
-      return result.slice(0, 5);
-    }
-
-    return sorted.slice(0, 5).map(t => ({
-      name: t.name,
-      count: t.count,
-      image: t.image
-    }));
+    return Object.values(tourCounts)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
   }, [recentBookings]);
 
   if (loading)
@@ -207,7 +192,7 @@ export default function DashboardPage() {
     );
 
   // Determine active chart dataset
-  const activeChartData = timeRange === "7day" ? mockupDailyRevenue : (revenueChart.length > 0 ? revenueChart.map(c => ({ name: c.month, revenue: c.revenue })) : mockupDailyRevenue);
+  const activeChartData = timeRange === "7day" ? dailyRevenueData : (revenueChart.length > 0 ? revenueChart.map(c => ({ name: c.month, revenue: c.revenue })) : dailyRevenueData);
 
   return (
     <div className="page-transition pb-10">
@@ -243,7 +228,6 @@ export default function DashboardPage() {
           <StatsCard
             title="Tổng tour"
             value={displayStats.totalTours}
-            change={displayStats.tourGrowth}
             icon={Luggage}
             iconColor="text-blue-500"
             iconBg="bg-blue-50"
@@ -259,7 +243,6 @@ export default function DashboardPage() {
           <StatsCard
             title="Khách hàng"
             value={displayStats.totalUsers}
-            change={displayStats.userGrowth}
             icon={Users}
             iconColor="text-orange-500"
             iconBg="bg-orange-50"
@@ -333,56 +316,62 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Revenue by Channel Donut Chart */}
+          {/* Revenue by Service Type Donut Chart */}
           <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm flex flex-col">
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-bold text-slate-800 text-base">Doanh thu theo kênh</h3>
-              <Link href="/dashboard/reports" className="text-xs text-blue-600 font-bold hover:underline">
+              <h3 className="font-bold text-slate-800 text-base">Doanh thu theo dịch vụ</h3>
+              <Link href="/dashboard/bookings" className="text-xs text-blue-600 font-bold hover:underline">
                 Xem chi tiết
               </Link>
             </div>
 
             {/* Donut container */}
             <div className="relative h-44 flex items-center justify-center">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={channelData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={55}
-                    outerRadius={75}
-                    paddingAngle={4}
-                    dataKey="value"
-                  >
-                    {channelData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => [`${value}%`, "Tỉ lệ"]} />
-                </PieChart>
-              </ResponsiveContainer>
-              {/* Centered text */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-2">
-                <span className="text-lg font-black text-slate-800 leading-tight">
-                  {displayStats.totalRevenue}
-                </span>
-                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
-                  Tổng doanh thu
-                </span>
-              </div>
+              {serviceTypeData.total > 0 ? (
+                <>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={serviceTypeData.data}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={55}
+                        outerRadius={75}
+                        paddingAngle={4}
+                        dataKey="amount"
+                      >
+                        {serviceTypeData.data.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => [formatCurrency(value as number), "Doanh thu"]} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  {/* Centered text */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-2">
+                    <span className="text-base font-black text-slate-800 leading-tight">
+                      {formatStatsRevenue(serviceTypeData.total)}
+                    </span>
+                    <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
+                      Tổng doanh thu
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <div className="text-slate-400 font-medium text-xs text-center">Chưa có dữ liệu doanh thu</div>
+              )}
             </div>
 
             {/* Legend breakdown list */}
             <div className="mt-4 flex-1 space-y-2.5 overflow-y-auto max-h-48 pr-1">
-              {channelData.map((item) => (
+              {serviceTypeData.data.map((item) => (
                 <div key={item.name} className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2">
                     <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
                     <span className="text-slate-500 font-semibold">{item.name}</span>
                   </div>
                   <div className="text-right font-bold text-slate-700">
-                    <span>{item.value}%</span>
+                    <span>{formatCurrency(item.amount)} ({item.value}%)</span>
                   </div>
                 </div>
               ))}
@@ -441,6 +430,13 @@ export default function DashboardPage() {
                       </td>
                     </tr>
                   ))}
+                  {displayBookings.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="py-10 text-center text-slate-400 font-medium">
+                        Chưa có đơn hàng nào trong cơ sở dữ liệu.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -492,6 +488,11 @@ export default function DashboardPage() {
                   </div>
                 );
               })}
+              {topToursList.length === 0 && (
+                <div className="py-10 text-center text-slate-400 font-medium text-xs">
+                  Chưa có dữ liệu tour bán chạy.
+                </div>
+              )}
             </div>
           </div>
         </div>
