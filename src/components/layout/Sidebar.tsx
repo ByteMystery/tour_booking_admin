@@ -5,32 +5,31 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Map,
-  CalendarCheck,
-  Users,
+  Sparkles,
+  Gift,
   Building2,
   Plane,
   Car,
   Package,
+  CalendarCheck,
   Star,
-  Image,
+  Compass,
+  Users,
+  Image as ImageIcon,
+  MapPin,
   Newspaper,
   Tag,
-  MapPin,
-  Settings,
   Shield,
+  Settings,
   ChevronLeft,
   ChevronRight,
-  Compass,
-  LogOut,
-  Sparkles,
-  Gift,
+  Globe,
+  ArrowRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/contexts/AuthContext";
-import { Logo } from "@/components/shared/Logo";
 import { useState } from "react";
 
-const navItems = [
+const navGroups = [
   {
     group: "Tổng quan",
     items: [
@@ -66,7 +65,7 @@ const navItems = [
   {
     group: "Nội dung",
     items: [
-      { href: "/dashboard/banners", label: "Banners", icon: Image },
+      { href: "/dashboard/banners", label: "Banners", icon: ImageIcon },
       { href: "/dashboard/destinations", label: "Điểm đến", icon: MapPin },
       { href: "/dashboard/articles", label: "Bài viết", icon: Newspaper },
       { href: "/dashboard/promos", label: "Khuyến mãi", icon: Tag },
@@ -83,27 +82,45 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { admin, logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
 
   return (
     <aside
       className={cn(
-        "relative flex flex-col bg-slate-900 text-white transition-all duration-300 ease-in-out",
+        "relative flex flex-col bg-white border-r border-slate-100 text-slate-700 transition-all duration-300 ease-in-out z-20",
         collapsed ? "w-16" : "w-64"
       )}
     >
       {/* Logo */}
-      <div className="flex h-16 items-center border-b border-slate-700 px-4">
-        <Logo collapsed={collapsed} />
+      <div className="flex h-16 items-center px-6 gap-3 shrink-0">
+        {!collapsed ? (
+          <div className="flex items-center gap-2">
+            <img
+              src="/logo_dark.png"
+              alt="Tripzio Logo"
+              className="h-7 w-auto object-contain"
+            />
+            <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 border border-slate-200">
+              Admin
+            </span>
+          </div>
+        ) : (
+          <div className="mx-auto">
+            <img
+              src="/logo_dark.png"
+              alt="Tripzio Logo"
+              className="h-6 w-auto object-contain"
+            />
+          </div>
+        )}
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto py-4 scrollbar-thin">
-        {navItems.map((group) => (
-          <div key={group.group} className="mb-1">
+      <nav className="flex-1 overflow-y-auto py-4 scrollbar-thin space-y-4">
+        {navGroups.map((group) => (
+          <div key={group.group} className="space-y-1">
             {!collapsed && (
-              <p className="mb-1 px-4 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+              <p className="mb-1.5 px-6 text-[9px] font-extrabold uppercase tracking-wider text-slate-500">
                 {group.group}
               </p>
             )}
@@ -111,67 +128,66 @@ export function Sidebar() {
               const active =
                 pathname === item.href ||
                 (item.href !== "/dashboard" && pathname.startsWith(item.href));
+
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   title={collapsed ? item.label : undefined}
                   className={cn(
-                    "mx-2 mb-0.5 flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+                    "mx-3 flex items-center gap-3 rounded-xl px-4 py-2.5 text-xs transition-all duration-200",
                     active
-                      ? "bg-indigo-600 text-white"
-                      : "text-slate-400 hover:bg-slate-800 hover:text-white"
+                      ? "bg-blue-50 text-blue-600 font-bold shadow-sm shadow-blue-500/[0.02]"
+                      : "text-slate-700 hover:bg-slate-50/70 hover:text-slate-950 font-medium"
                   )}
                 >
-                  <item.icon className="h-4 w-4 shrink-0" />
-                  {!collapsed && <span>{item.label}</span>}
+                  <item.icon className={cn("h-4 w-4 shrink-0", active ? "text-blue-600" : "text-slate-500")} />
+                  {!collapsed && <span className="truncate">{item.label}</span>}
                 </Link>
               );
             })}
-            {!collapsed && <div className="mx-4 my-2 border-t border-slate-800" />}
+            {!collapsed && <div className="mx-4 my-2 border-t border-slate-100/50" />}
           </div>
         ))}
       </nav>
 
-      {/* User / Logout */}
-      <div className="border-t border-slate-700 p-3">
-        {!collapsed ? (
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-500 text-xs font-bold">
-              {admin?.displayName?.charAt(0) ?? "A"}
-            </div>
-            <div className="flex-1 overflow-hidden">
-              <p className="truncate text-xs font-medium">{admin?.displayName}</p>
-              <p className="truncate text-[10px] text-slate-400">{admin?.role}</p>
-            </div>
-            <button
-              onClick={logout}
-              className="rounded p-1 text-slate-400 hover:text-red-400 transition-colors"
-              title="Đăng xuất"
-            >
-              <LogOut className="h-4 w-4" />
-            </button>
+      {/* Bottom Action Card */}
+      {!collapsed && (
+        <div className="mx-4 mb-4 rounded-2xl bg-blue-50/60 p-4 border border-blue-100/50 flex items-center gap-3 shrink-0">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100/50 text-blue-500">
+            <Globe className="h-5 w-5" />
           </div>
-        ) : (
-          <button
-            onClick={logout}
-            className="mx-auto flex items-center justify-center rounded p-1 text-slate-400 hover:text-red-400"
-            title="Đăng xuất"
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-bold text-slate-800">Xem website</p>
+            <p className="text-[10px] text-slate-500 truncate">Truy cập trang web Tripzio</p>
+          </div>
+          <Link
+            href="/"
+            target="_blank"
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm shadow-blue-500/10"
           >
-            <LogOut className="h-4 w-4" />
-          </button>
-        )}
-      </div>
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      )}
+
+      {/* Footer copyright */}
+      {!collapsed && (
+        <div className="px-6 pb-6 pt-2 text-[11px] text-slate-400 font-medium shrink-0">
+          <p>© 2024 Tripzio Admin</p>
+          <p className="mt-0.5">Phiên bản 1.0.0</p>
+        </div>
+      )}
 
       {/* Collapse toggle */}
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="absolute -right-3 top-20 flex h-6 w-6 items-center justify-center rounded-full border border-slate-700 bg-slate-900 text-slate-400 hover:text-white transition-colors z-10"
+        className="absolute -right-3 top-6 flex h-6 w-6 items-center justify-center rounded-full border border-slate-100 bg-white text-slate-400 hover:text-slate-600 transition-colors z-10 shadow-sm shadow-black/5"
       >
         {collapsed ? (
-          <ChevronRight className="h-3 w-3" />
+          <ChevronRight className="h-3.5 w-3.5" />
         ) : (
-          <ChevronLeft className="h-3 w-3" />
+          <ChevronLeft className="h-3.5 w-3.5" />
         )}
       </button>
     </aside>

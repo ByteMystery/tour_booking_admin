@@ -32,11 +32,11 @@ export function Logo({ className, collapsed = false, theme = "dark" }: LogoProps
     );
   }
 
-  // Full brand logo loaded from public/logo.png
+  // Full brand logo loaded from public/logo_dark.png
   return (
     <div className={cn("flex items-center shrink-0", className)}>
       <img
-        src="/logo.png"
+        src="/logo_dark.png"
         alt="Tripzio Logo"
         className="h-6 w-auto object-contain"
       />

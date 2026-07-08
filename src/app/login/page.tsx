@@ -67,7 +67,7 @@ export default function LoginPage() {
         {/* Logo and Brand */}
         <div className="relative z-10 flex items-center gap-3">
           <img
-            src="/logo.png"
+            src="/logo_dark.png"
             alt="Tripzio Logo"
             className="h-8 w-auto object-contain"
           />
