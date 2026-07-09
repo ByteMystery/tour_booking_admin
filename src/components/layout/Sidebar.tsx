@@ -23,8 +23,6 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Globe,
-  ArrowRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -151,25 +149,7 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* Bottom Action Card */}
-      {!collapsed && (
-        <div className="mx-4 mb-4 rounded-2xl bg-blue-50/60 p-4 border border-blue-100/50 flex items-center gap-3 shrink-0">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100/50 text-blue-500">
-            <Globe className="h-5 w-5" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold text-slate-800">Xem website</p>
-            <p className="text-[10px] text-slate-500 truncate">Truy cập trang web Tripzio</p>
-          </div>
-          <Link
-            href="/"
-            target="_blank"
-            className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm shadow-blue-500/10"
-          >
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
-      )}
+
 
       {/* Footer copyright */}
       {!collapsed && (
